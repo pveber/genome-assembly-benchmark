@@ -1,0 +1,13 @@
+OASISFormat: 0.4
+Name:        genome-assembly-benchmark
+Version:     0.0.0
+Synopsis:    A benchmark for genome assemblers
+Authors:     Philippe Veber <philippe.veber@gmail.com>
+License:     GPL-3
+Plugins:     META (0.4), DevFiles (0.4)
+BuildTools:  ocamlbuild
+
+Executable "genome-assembly-benchmark"
+  Path:         src
+  MainIs:       main.ml
+  BuildDepends: bistro.bioinfo, bistro.utils, threads
