@@ -25,3 +25,9 @@ let sequencer n fa =
   ( [ ao / Arts.pe_fastq `One ],
     [ ao / Arts.pe_fastq `Two ] )
 
+
+let goal =
+  Spades.spades
+    ~pe:(sequencer 1000 bsubtilis_genome)
+    ()
+
