@@ -34,42 +34,6 @@ let seqSys_option = function
   | `HS25 -> "HS25"
   | `MS -> "MS"
 
-module Output :
-sig
-  type 'a t
-  val errfree : [> `Errfree_SAM] t
-  val aln : [> `ALN] t
-  val sam : [> `SAM] t
-  val list_to_args : _ t list -> expr
-end
-=
-struct
-  type _ t =
-    | Errfree_SAM
-    | ALN
-    | SAM
-
-  let errfree = Errfree_SAM
-  let aln = ALN
-  let sam = SAM
-
-  let rec list_to_args_aux = function
-    | [] -> []
-    | Errfree_SAM :: t -> `Errfree_SAM :: list_to_args_aux t
-    | SAM :: t -> `SAM :: list_to_args_aux t
-    | ALN :: t -> `ALN :: list_to_args_aux t
-
-  let list_to_args x =
-    let flags = list_to_args_aux x in
-    List.filter_opt [
-      if List.mem flags `Errfree_SAM then Some "--errfree" else None ;
-      if List.mem flags `SAM then Some "--samout" else None ;
-      if List.mem flags `ALN then None else Some "--noALN" ;
-    ]
-    |> List.map ~f:string
-    |> seq ~sep:" "
-end
-
 type _ tbool =
   | True  : [`True] tbool
   | False : [`False] tbool
@@ -154,16 +118,9 @@ let art_illumina
   ]
 
 
-let se_fastq
-  : (< read_model : [`paired] ; .. > art_illumina_output,
-     [`sanger] fastq) selector
-  =
-  selector [ "sample.fq" ]
+let se_fastq = selector [ "sample.fq" ]
 
-let pe_fastq x
-  : (< read_model : [`paired] ; .. > art_illumina_output,
-     [`sanger] fastq) selector
-  =
+let pe_fastq x =
   selector [
     match x with
     | `One -> "sample1.fq"
