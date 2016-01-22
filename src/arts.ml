@@ -70,6 +70,7 @@ let args_of_read_model
       [ opt "--len" int len ]
     | Paired_end pe ->
       [ string "--paired" ;
+        opt "--len" int pe.len ;
         opt "--mflen" float pe.mflen ;
         opt "--sdev" float pe.sdev ;
         flag string "--matepair" pe.matepair ]
@@ -112,6 +113,7 @@ let art_illumina
       string (ite errfree_sam_output "--errfree" "") ;
       string (ite sam_output "--samout" "") ;
       depth_option depth ;
+      seq ~sep:" " (args_of_read_model read_model) ;
       opt "--in" dep fa ;
       opt "--out" (fun x -> seq [x ; string "/sample"]) dest ;
     ]
