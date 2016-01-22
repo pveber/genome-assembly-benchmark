@@ -25,9 +25,22 @@ let sequencer n fa =
   ( [ ao / Arts.pe_fastq `One ],
     [ ao / Arts.pe_fastq `Two ] )
 
+let bsubtilis_reads = sequencer 100_000 bsubtilis_genome
 
-let goal =
-  Spades.spades
-    ~pe:(sequencer 1000 bsubtilis_genome)
-    ()
+let spades_bsubtilis_assembly =
+  Spades.spades ~pe:bsubtilis_reads ()
+  / Spades.contigs
 
+let quast_comparison =
+  Quast.quast
+    ~reference:bsubtilis_genome
+    [ spades_bsubtilis_assembly ]
+
+let rep x = "output" :: x
+
+let () = Bistro_app.(
+    simple [
+      rep [ "B.subtilis" ; "SPAdes" ; "contigs.fa"] %> spades_bsubtilis_assembly ;
+      rep [ "B.subtilis" ; "quast" ] %> quast_comparison
+    ]
+  )
