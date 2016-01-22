@@ -1,0 +1,4 @@
+B _build/src
+PKG bistro.bioinfo
+PKG bistro.utils
+PKG ppx_bistro
