@@ -10,7 +10,7 @@ let pe_args (ones, twos) =
   seq ~sep:" " (
     List.mapi ones ~f:(opt 1)
     @
-    List.mapi twos ~f:(opt 1)
+    List.mapi twos ~f:(opt 2)
   )
 
 type spades_output = [`spades_output] directory
