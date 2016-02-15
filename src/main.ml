@@ -22,25 +22,35 @@ let sequencer n fa =
         (`Read_count n) fa
     )
   in
-  ( [ ao / Arts.pe_fastq `One ],
-    [ ao / Arts.pe_fastq `Two ] )
+  (ao / Arts.pe_fastq `One,
+   ao / Arts.pe_fastq `Two)
 
 let bsubtilis_reads = sequencer 100_000 bsubtilis_genome
 
 let spades_bsubtilis_assembly =
-  Spades.spades ~pe:bsubtilis_reads ()
+  let pe = [ fst bsubtilis_reads], [snd bsubtilis_reads ] in
+  Spades.spades ~pe ()
   / Spades.contigs
+
+let idba_ud_bsubtilis_assembly =
+  Idba.(idba_ud (fq2fa (`Pe_merge bsubtilis_reads)))
+  / Idba.idba_ud_contigs
 
 let quast_comparison =
   Quast.quast
     ~reference:bsubtilis_genome
-    [ spades_bsubtilis_assembly ]
+    [
+      spades_bsubtilis_assembly ;
+      idba_ud_bsubtilis_assembly ;
+    ]
 
 let rep x = "output" :: x
 
 let () = Bistro_app.(
     simple [
       rep [ "B.subtilis" ; "SPAdes" ; "contigs.fa"] %> spades_bsubtilis_assembly ;
+      rep [ "B.subtilis" ; "IDBA" ; ] %> idba_ud_bsubtilis_assembly ;
       rep [ "B.subtilis" ; "quast" ] %> quast_comparison
     ]
   )
+
