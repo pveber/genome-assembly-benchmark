@@ -39,6 +39,7 @@ let idba_ud_bsubtilis_assembly =
 let quast_comparison =
   Quast.quast
     ~reference:bsubtilis_genome
+    ~labels:["SPAdes" ; "IDBA-UD"]
     [
       spades_bsubtilis_assembly ;
       idba_ud_bsubtilis_assembly ;
