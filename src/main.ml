@@ -46,14 +46,23 @@ let velvet_bsubtilis_assembly =
     (fst bsubtilis_reads) (snd bsubtilis_reads)
   / Velvet.contigs
 
+let cisa_bsubtilis_assembly : fasta workflow =
+  Cisa.merge [
+    "SPAdes", spades_bsubtilis_assembly ;
+    "IDBA", idba_ud_bsubtilis_assembly ;
+    "Velvet", velvet_bsubtilis_assembly ;
+  ]
+  |> Cisa.cisa 5_000_000
+
 let quast_comparison =
   Quast.quast
     ~reference:bsubtilis_genome
-    ~labels:["SPAdes" ; "IDBA-UD" ; "Velvet"]
+    ~labels:["SPAdes" ; "IDBA-UD" ; "Velvet" ; "CISA"]
     [
       spades_bsubtilis_assembly ;
       idba_ud_bsubtilis_assembly ;
       velvet_bsubtilis_assembly ;
+      cisa_bsubtilis_assembly ;
     ]
 
 let rep x = "output" :: x
@@ -63,7 +72,7 @@ let () = Bistro_app.(
       rep [ "B.subtilis" ; "SPAdes" ; "contigs.fa"] %> spades_bsubtilis_assembly ;
       rep [ "B.subtilis" ; "IDBA" ; ] %> idba_ud_bsubtilis_assembly ;
       rep [ "B.subtilis" ; "Velvet" ; ] %> velvet_bsubtilis_assembly ;
-      rep [ "B.subtilis" ; "quast" ] %> quast_comparison
+      rep [ "B.subtilis" ; "CISA" ; ] %> cisa_bsubtilis_assembly ;
+      rep [ "B.subtilis" ; "quast" ] %> quast_comparison ;
     ]
   )
-
