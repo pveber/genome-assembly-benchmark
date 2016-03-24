@@ -53,6 +53,7 @@ CONFIG={{ tmp }}/cisa.config
 
 mkdir -p {{ tmp }}
 mkdir -p {{ tmp }}/CISA1
+cd {{ tmp }}
 
 cat > $CONFIG <<__HEREDOC__
 genome={{ int genome_size }}
