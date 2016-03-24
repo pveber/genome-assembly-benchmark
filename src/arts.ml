@@ -3,24 +3,10 @@ open Bistro.Std
 open Bistro_bioinfo.Std
 open Bistro.EDSL_sh
 
-(* depext: libgsl-dev *)
-let package : package workflow = Bistro.Workflow.make [%sh{|
-PREFIX={{ dest }}
-URL=http://www.niehs.nih.gov/research/resources/assets/docs/artsrcchocolatecherrycake031915linuxtgz.tgz
-
-set -e
-
-mkdir -p $PREFIX
-cd $PREFIX
-wget $URL
-tar xvfz artsrcchocolatecherrycake031915linuxtgz.tgz
-cd art_src_ChocolateCherryCake_Linux
-./configure --prefix=$PREFIX
-make
-make install
-cd ..
-rm -rf art_src_ChocolateCherryCake_Linux
-|}]
+let package = {
+  Bistro.pkg_name = "art" ;
+  pkg_version = "031915"
+}
 
 let depth_option = function
   | `Read_count i -> opt "--rcount" int i
@@ -91,9 +77,9 @@ let art_illumina
       sam : 'c ;
       read_model : 'rm > art_illumina_output workflow
   =
-  workflow ~descr:"art_illumina" [
+  workflow ~descr:"art_illumina" ~pkgs:[package] [
     mkdir_p dest ;
-    cmd "art_illumina" ~path:[package] [
+    cmd "art_illumina" [
       option (opt "--qprof1" string) qprof1 ;
       option (opt "--qprof2" string) qprof2 ;
       option (flag string "--amplicon") amplicon ;

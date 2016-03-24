@@ -3,21 +3,10 @@ open Bistro.Std
 open Bistro_bioinfo.Std
 open Bistro.EDSL_sh
 
-
-let package = Bistro.Workflow.make ~descr:"cisa.package" [%sh{|
-PREFIX={{ dest }}
-
-set -e
-mkdir -p $PREFIX/bin
-cd $PREFIX
-wget http://sb.nhri.org.tw/CISA/upload/en/2014/3/CISA_20140304-05194132.tar
-tar xvf CISA_20140304-05194132.tar
-cd CISA1.3
-cp *.py ../bin
-
-cd ..
-rm -f CISA_20140304-05194132.tar
-|}]
+let package = {
+  Bistro.pkg_name = "cisa" ;
+  pkg_version = "20140304" ;
+}
 
 type cisa_output = [`cisa_output] directory
 
@@ -41,34 +30,40 @@ let merge ?(min_length = 100) xs =
     |> List.concat
     |> seq ~sep:""
   in
-  workflow [
+  workflow ~descr:"cisa.Merge" ~pkgs:[package] [
     mkdir_p tmp ;
     heredoc ~dest:config_file_path config_file ;
-    cmd "Merge.py" ~path:[package] [ config_file_path ] ;
+    cmd "Merge.py" [ config_file_path ] ;
   ]
 
+let which prg =
+  let cmd = "which " ^ prg in
+  let ic = Unix.open_process_in cmd in
+  match In_channel.input_line ic with
+  | None -> failwithf "Could not find %s in $PATH" prg ()
+  | Some p -> p
+
 let cisa genome_size contigs =
-  let config_file =
-    List.intersperse ~sep:[string "\n"] [
-      [ string "genome=" ; int genome_size ] ;
-      [ string "infile=" ; dep contigs ] ;
-      [ string "outfile=" ; dest] ;
-      [ string "nucmer=" ; dep Mummer.package // "bin/nucmer" ] ;
-      [ string "R2_Gap=0.95" ] ;
-      [ string "CISA=" ; dep package // "CISA1.3" ] ;
-      [ string "makeblastdb=" ; dep Blast.package // "bin/makeblastdb" ] ;
-      [ string "blastn=" ; dep Blast.package // "bin/blastn" ] ;
-    ]
-    |> List.concat
-    |> seq ~sep:""
-  in
-  let config_file_path = tmp // "cisa.config" in
-  workflow [
-    mkdir_p tmp ;
-    cd tmp ;
-    mkdir_p (tmp // "CISA1") ;
-    heredoc ~dest:config_file_path config_file ;
-    cmd ""
-      ~path:[package;Mummer.package;Blast.package]
-      [ string "yes | CISA.py" ; config_file_path ] ;
-  ]
+  Bistro.Workflow.make ~descr:"cisa" [%bash{|
+NUCMER=`which nucmer`
+CISA=$(dirname $(readlink -f $(which CISA.py)))
+MAKEBLASTDB=`which makeblastdb`
+BLASTN=`which blastn`
+CONFIG={{ tmp }}/cisa.config
+
+mkdir -p {{ tmp }}
+mkdir -p {{ tmp }}/CISA1
+
+cat > $CONFIG <<__HEREDOC__
+genome={{ int genome_size }}
+infile={{ dep contigs }}
+outfile={{ dest }}
+nucmer=$NUCMER
+R2_Gap=0.95
+CISA=$CISA
+makeblastdb=$MAKEBLASTDB
+blastn=$BLASTN
+__HEREDOC__
+
+yes | CISA.py $CONFIG
+|}]

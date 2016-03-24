@@ -68,7 +68,7 @@ let quast_comparison =
 let rep x = "output" :: x
 
 let () = Bistro_app.(
-    simple [
+    local [
       rep [ "B.subtilis" ; "SPAdes" ; "contigs.fa"] %> spades_bsubtilis_assembly ;
       rep [ "B.subtilis" ; "IDBA" ; ] %> idba_ud_bsubtilis_assembly ;
       rep [ "B.subtilis" ; "Velvet" ; ] %> velvet_bsubtilis_assembly ;
