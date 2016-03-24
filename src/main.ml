@@ -67,8 +67,18 @@ let quast_comparison =
 
 let rep x = "output" :: x
 
-let () = Bistro_app.(
-    local [
+let np = 4
+let mem = 10 * 1024
+
+let main queue workdir () =
+  let backend = match queue with
+    | None -> Bistro_engine.Scheduler.local_backend ~np ~mem
+    | Some queue ->
+      let workdir = Option.value ~default:(Sys.getcwd ()) workdir in
+      Bistro_pbs.Backend.make ~queue ~workdir
+  in
+  Bistro_app.(
+    with_backend backend [
       rep [ "B.subtilis" ; "SPAdes" ; "contigs.fa"] %> spades_bsubtilis_assembly ;
       rep [ "B.subtilis" ; "IDBA" ; ] %> idba_ud_bsubtilis_assembly ;
       rep [ "B.subtilis" ; "Velvet" ; ] %> velvet_bsubtilis_assembly ;
@@ -76,3 +86,17 @@ let () = Bistro_app.(
       rep [ "B.subtilis" ; "quast" ] %> quast_comparison ;
     ]
   )
+
+let spec =
+  let open Command.Spec in
+  empty
+  +> flag "--pbsqueue" (optional string) ~doc:"QUEUE Name of a PBS queue"
+  +> flag "--nodedir"  (optional string) ~doc:"DIR (Preferably local) scratch directory on worker nodes"
+
+let command =
+  Command.basic
+    ~summary:"Analysis of a ChIP-seq dataset"
+    spec
+    main
+
+let () = Command.run ~version:"0.1" command

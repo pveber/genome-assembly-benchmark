@@ -10,4 +10,4 @@ BuildTools:  ocamlbuild
 Executable "genome-assembly-benchmark"
   Path:         src
   MainIs:       main.ml
-  BuildDepends: bistro.bioinfo, bistro.utils, ppx_bistro, threads
+  BuildDepends: bistro.bioinfo, bistro.utils, bistro.pbs, ppx_bistro, threads
