@@ -1,0 +1,4 @@
+#require "bistro.utils bistro_launcher core lwt";;
+#directory "./_build/src";;
+#load "genome_assembly_benchmark.cma";;
+
