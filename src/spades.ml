@@ -21,7 +21,7 @@ let spades
     ()
   : spades_output workflow
   =
-  workflow ~np:4 ~mem:(4 * 1024) ~descr:"spades" [
+  workflow ~np:4 ~mem:(10 * 1024) ~descr:"spades" [
     mkdir_p dest ;
     cmd "spades.py" [
       option (flag string "--sc") single_cell ;

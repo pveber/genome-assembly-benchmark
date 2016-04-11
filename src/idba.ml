@@ -30,10 +30,11 @@ let fq2fa ?filter input =
 type idba_ud_output = [`idba_ud_output] directory
 
 let idba_ud fa : idba_ud_output workflow =
-  workflow ~descr:"idba_ud" [
+  workflow ~np:4 ~mem:(10 * 1024) ~descr:"idba_ud" [
     mkdir_p dest ;
     cmd "idba_ud" [
       opt "--read" dep fa ;
+      opt "--num_threads" ident np ;
       opt "--out" ident dest ;
     ]
   ]
