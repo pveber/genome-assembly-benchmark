@@ -39,15 +39,17 @@ let pipeline { name ; genome_size ; reference ; reads = ((reads_1, reads_2) as r
     ]
     |> Cisa.cisa genome_size
   in
+  let reapr_spades = Reapr.reapr (reads_1, reads_2) spades_assembly in
   let quast_comparison =
     Quast.quast
       ~reference
-      ~labels:["SPAdes" ; "IDBA-UD" ; "Velvet" ; "CISA"]
+      ~labels:["SPAdes" ; "IDBA-UD" ; "Velvet" ; "CISA" ; "SPAdes+REAPR"]
       [
         spades_assembly ;
         idba_ud_assembly ;
         velvet_assembly ;
         cisa_assembly ;
+        reapr_spades / Reapr.assembly ;
       ]
   in
   let open Bistro_app in
@@ -57,6 +59,7 @@ let pipeline { name ; genome_size ; reference ; reads = ((reads_1, reads_2) as r
     rep [ "IDBA" ; ] %> idba_ud_assembly ;
     rep [ "Velvet" ; ] %> velvet_assembly ;
     rep [ "CISA" ; ] %> cisa_assembly ;
+    rep [ "reapr" ; "SPAdes" ] %> reapr_spades ;
     rep [ "quast" ] %> quast_comparison ;
   ]
 
@@ -83,25 +86,17 @@ let bsubtilis_genome : fasta workflow =
   Unix_tools.wget "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/Bacillus_subtilis/representative/GCF_000227465.1_ASM22746v1/GCF_000227465.1_ASM22746v1_genomic.fna.gz"
   |> Unix_tools.gunzip
 
-let bsubtilis = {
+let bsubtilis_no_errors = {
   name = "B.subtilis" ;
   genome_size = 5_000_000 ;
   reference = bsubtilis_genome ;
   reads = sequencer 100_000 bsubtilis_genome ;
 }
 
-let np = 4
-let mem = 10 * 1024
-
-let main queue workdir () =
-  let backend = match queue with
-    | None -> Bistro_engine.Scheduler.local_backend ~np ~mem
-    | Some queue ->
-      let workdir = Option.value ~default:(Sys.getcwd ()) workdir in
-      Bistro_pbs.Backend.make ~queue ~workdir
-  in
+let main preview_mode workdir np mem () =
+  let backend = Bistro_engine.Scheduler.local_backend ?workdir ~np ~mem:(mem * 1024) () in
   let targets = List.concat [
-      pipeline bsubtilis
+      pipeline bsubtilis_no_errors
     ]
   in
   Bistro_app.with_backend backend targets
@@ -109,8 +104,10 @@ let main queue workdir () =
 let spec =
   let open Command.Spec in
   empty
-  +> flag "--pbsqueue" (optional string) ~doc:"QUEUE Name of a PBS queue"
-  +> flag "--nodedir"  (optional string) ~doc:"DIR (Preferably local) scratch directory on worker nodes"
+  +> flag "--preview-mode" no_arg ~doc:" Run on a small subset of the data"
+  +> flag "--workdir"  (optional string) ~doc:"DIR (Preferably local) directory for temporary files"
+  +> flag "--np"      (optional_with_default 4 int) ~doc:"INT Number of processors"
+  +> flag "--mem"     (optional_with_default 4 int) ~doc:"INT Available memory (in GB)"
 
 let command =
   Command.basic
