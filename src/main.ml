@@ -11,6 +11,9 @@ type dataset = {
   reads : [`sanger] fastq workflow * [`sanger] fastq workflow ;
 }
 
+let fetch_fq_gz url : [`sanger] fastq workflow =
+  Unix_tools.wget url
+  |> Unix_tools.gunzip
 
 let pipeline { name ; genome_size ; reference ; reads = ((reads_1, reads_2) as reads) } =
   let spades_assembly =
@@ -86,17 +89,37 @@ let bsubtilis_genome : fasta workflow =
   Unix_tools.wget "ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/Bacillus_subtilis/representative/GCF_000227465.1_ASM22746v1/GCF_000227465.1_ASM22746v1_genomic.fna.gz"
   |> Unix_tools.gunzip
 
-let bsubtilis_no_errors = {
+let bsubtilis = {
   name = "B.subtilis" ;
   genome_size = 5_000_000 ;
   reference = bsubtilis_genome ;
   reads = sequencer 100_000 bsubtilis_genome ;
 }
 
+let ecoli_genome : fasta workflow =
+  Unix_tools.wget "http://www.ncbi.nlm.nih.gov/nuccore/49175990?report=fasta"
+
+let ecoli_articial = {
+  name = "E.coli (artificial)" ;
+  genome_size = 4639675 ;
+  reference = ecoli_genome ;
+  reads = sequencer 100_000 ecoli_genome
+}
+
+let ecoli = {
+  name = "E.coli (artificial)" ;
+  genome_size = 4639675 ;
+  reference = ecoli_genome ;
+  reads = (fetch_fq_gz "http://spades.bioinf.spbau.ru/spades_test_datasets/ecoli_mc/s_6_1.fastq.gz",
+           fetch_fq_gz "http://spades.bioinf.spbau.ru/spades_test_datasets/ecoli_mc/s_6_3.fastq.gz") ;
+}
+
 let main preview_mode workdir np mem () =
   let backend = Bistro_engine.Scheduler.local_backend ?workdir ~np ~mem:(mem * 1024) () in
   let targets = List.concat [
-      pipeline bsubtilis_no_errors
+      pipeline bsubtilis ;
+      pipeline ecoli_articial ;
+      pipeline ecoli ;
     ]
   in
   Bistro_app.with_backend backend targets
